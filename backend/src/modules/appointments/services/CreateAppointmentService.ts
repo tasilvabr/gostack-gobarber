@@ -5,6 +5,7 @@ import AppError from '@shared/errors/AppError';
 
 import ICacheProvider from '@shared/container/providers/CacheProvider/models/ICacheProvider';
 import INotificationsRepository from '@modules/notifications/repositories/INotificationsRepository';
+import IUserRepository from '@modules/users/repositories/IUsersRepository';
 import Appointment from '../infra/typeorm/entities/Appointment';
 import IAppointmentsRepository from '../repositories/IAppointmentsRepository';
 
@@ -25,6 +26,9 @@ class CreateAppointmentService {
 
     @inject('CacheProvider')
     private cacheProvider: ICacheProvider,
+
+    @inject('UsersRepository')
+    private usersRepository: IUserRepository,
   ) {}
 
   public async execute({
@@ -32,6 +36,12 @@ class CreateAppointmentService {
     provider_id,
     user_id,
   }: IRequest): Promise<Appointment> {
+    const providerExists = await this.usersRepository.findById(provider_id);
+
+    if (!providerExists) {
+      throw new AppError('The Provider does not exist.');
+    }
+
     const appointmentDate = startOfHour(date);
 
     if (isBefore(appointmentDate, Date.now())) {
